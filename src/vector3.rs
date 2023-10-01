@@ -2,11 +2,11 @@ use std::ops;
 
 //base vector 3 struct used for colours and points.
 //contains operation overrides
+#[derive(Clone, Copy, Debug)]
 pub struct Vector3 {
-    x: f64,
-    y: f64,
-    z: f64,
-
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 impl Vector3 {
@@ -26,6 +26,18 @@ impl Vector3 {
 
     pub fn z(self) -> f64 {
         self.z
+    }
+
+    pub fn squared_length(self) -> f64 {
+        (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
+    }
+
+    pub fn length(self) -> f64 {
+        (self.squared_length()).sqrt()
+    }
+
+    pub fn unit(self) -> Vector3 {
+        self / self.length()
     }
 }
 
@@ -55,6 +67,17 @@ impl ops::Div<Vector3> for Vector3 {
     fn div(self, v: Vector3) -> Vector3 {
         Vector3::new(self.x / v.x, self.y / v.y, self.z / v.z)
     }
+}
+
+//matrix division and multiplication by a constant is just each index */ the float
+impl ops::Div<f64> for Vector3 {
+    type Output = Vector3;
+    fn div(self, f: f64) -> Vector3 { Vector3::new(self.x / f, self.y / f, self.z / f)}
+}
+
+impl ops::Mul<f64> for Vector3 {
+    type Output = Vector3;
+    fn mul(self, f: f64) -> Vector3 { Vector3::new(self.x * f, self.y * f, self.z * f)}
 }
 
 impl ops::Neg for Vector3 {
