@@ -1,18 +1,19 @@
-use crate::vector3::Vector3;
+use std::fs::File;
+use std::io::Write;
+use crate::hittable::{HitRecord, Hittable};
+use crate::interval::Interval;
+use crate::ray::Ray;
+use crate::vector3::{Colour, Vector3};
 
 pub struct Camera {
     pub origin: Vector3,
-    focal_length:f64,
-    viewport_height:f64,
-    viewport_width:f64,
-    viewport_horizontal: Vector3,
-    viewport_vertical: Vector3,
+    image_height: f64,
+    image_width: f64,
     pub pixel_delta_v: Vector3,
     pub pixel_delta_u: Vector3,
     pub pixel_origin: Vector3,
 }
 
-//these equations are from Ray Tracing in One Weekend: Listing 9
 impl Camera {
     pub fn new(
         image_width:f64,
@@ -39,14 +40,57 @@ impl Camera {
 
         Camera {
             origin,
-            focal_length,
-            viewport_height,
-            viewport_width,
-            viewport_horizontal,
-            viewport_vertical,
+            image_height,
+            image_width,
             pixel_delta_v,
             pixel_delta_u,
             pixel_origin,
         }
     }
+
+    pub fn render(&self, world : &dyn Hittable) {
+        let mut pixel_center : Vector3;
+        let mut ray : Ray;
+        let mut ray_direction : Vector3;
+
+        //create a file
+        let mut data_file = File::create("scene.ppm").expect("Creation failed.");
+
+        //header required for ppm file
+        data_file.write("P3\n".as_bytes()).expect("write failed");
+        data_file.write((self.image_width.to_string() + " " + &*self.image_height.to_string() + "\n").as_bytes()).expect("write failed");
+        data_file.write("255\n".as_bytes()).expect("write failed");
+
+        //generate pixel colours in matrix and add to ppm file
+        for i in (0..self.image_height as u32 +1).rev() {
+            //progress tracker
+            println!("On row {} of {}", self.image_height - i as f64, self.image_height);
+
+            for j in 0..self.image_width as u32 {
+                pixel_center = self.pixel_origin + (self.pixel_delta_u * i as f64) + (self.pixel_delta_v * j as f64);
+                ray_direction = pixel_center - self.origin;
+                ray = Ray{ origin : self.origin, direction:ray_direction };
+
+                let pixel_colour = (ray_colour(&ray, world)).to_string();
+
+                data_file.write((pixel_colour).as_bytes()).expect("write failed");
+            }
+        }
+
+        println!("Created a file");
+    }
+}
+
+fn ray_colour(ray:&Ray, world : &dyn Hittable) -> Colour {
+    //calculate hit point and colour sphere according to its normal vectors
+    let mut record = HitRecord::new();
+
+    if world.hit(ray, Interval::new(0.0, f64::INFINITY), &mut record) {
+        return (record.normal + Colour::new(1.0, 1.0, 1.0)) * 0.5;
+    }
+
+    let unit_direction : Vector3 = Vector3::unit(ray.direction);
+    let a = 0.5 * (unit_direction.y + 1.0);
+    //this is anything not hitting a shape: a white-to blue gradient background
+    return Colour::new(1.0, 1.0, 1.0) * (1.0 - a) + Colour::new(0.5, 0.7, 1.0) * a;
 }

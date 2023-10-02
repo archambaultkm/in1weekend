@@ -53,6 +53,14 @@ impl Vector3 {
     }
 }
 
+impl Colour {
+    pub fn to_string(&self) -> String {
+        return ((self.x * 255.99) as i32).to_string() + " " +
+            &*((self.y * 255.99) as i32).to_string() + " " +
+            &*((self.z * 255.99) as i32).to_string() + "\n"
+    }
+}
+
 impl ops::Add<Vector3> for Vector3 {
     type Output = Vector3;
     fn add(self, v: Vector3) -> Vector3 {
