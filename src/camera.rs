@@ -1,3 +1,4 @@
+use crate::ray::Ray;
 use crate::vector3::Vector3;
 
 pub struct Camera {
@@ -25,14 +26,17 @@ impl Camera {
         let viewport_width = viewport_height * (image_width/image_height);
 
         let viewport_horizontal = Vector3 { x:viewport_width, y:0.0, z:0.0 };
-        let viewport_vertical = Vector3 {x:0.00, y:-viewport_height, z:0.0 };
+        let viewport_vertical = Vector3 {x:0.00, y:viewport_height, z:0.0 };
         let pixel_delta_v = viewport_horizontal/image_width;
         let pixel_delta_u = viewport_vertical/image_height;
 
-        let viewport_upper_left = origin -
-            Vector3::new(0.0,0.0,focal_length) -
-            viewport_horizontal/2.0 - viewport_vertical/2.0;
-        let pixel_origin = viewport_upper_left + (pixel_delta_u + pixel_delta_v) * 0.5;
+        let viewport_upper_left = origin
+            - viewport_horizontal/2.0
+            - viewport_vertical/2.0
+            - Vector3::new(0.0,0.0,focal_length);
+        let pixel_origin = viewport_upper_left
+            + viewport_horizontal * pixel_delta_u
+            + viewport_vertical * pixel_delta_v;
 
         Camera {
             origin,
