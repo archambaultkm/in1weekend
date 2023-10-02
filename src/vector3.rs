@@ -36,6 +36,16 @@ impl Vector3 {
         (self.squared_length()).sqrt()
     }
 
+    pub fn dot(self, v: Vector3) -> f64 {
+        (self.x * v.x) + (self.y * v.y) + (self.z * v.z)
+    }
+
+    pub fn cross(self, rhs: Vector3) -> Vector3 {
+        Vector3::new(self.y * rhs.z - self.z * rhs.y,
+                  self.z * rhs.x - self.x * rhs.z,
+                  self.x * rhs.y - self.y * rhs.x)
+    }
+
     pub fn unit(self) -> Vector3 {
         self / self.length()
     }

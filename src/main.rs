@@ -20,7 +20,22 @@ fn string_colour(pixel_colour:Vector3) -> String {
         &*((pixel_colour.z * 255.99) as i32).to_string() + "\n"
 }
 
-fn ray_colour(ray:Ray) -> Vector3 {
+fn hit_sphere(center : &Vector3, radius : f64, ray : &Ray) -> bool {
+    let oc = ray.origin - *center;
+    let a = ray.direction.dot(ray.direction);
+    let b = 2.0 * oc.dot(ray.direction);
+    let c = oc.dot(oc) - radius  * radius;
+
+    let discriminant = b*b - 4.0*a*c;
+    return discriminant > 0.0;
+}
+
+fn ray_colour(ray:&Ray) -> Vector3 {
+    //FOR NOW hard-code a circle with center at camera origin and a colour to return if it hits that circle
+    if hit_sphere(&Vector3{ x: 0.0, y: 0.0, z: -1.0}, 0.5, ray) {
+        return Vector3::new(0.4, 0.54, 0.3);
+    }
+
     let unit_direction : Vector3 = Vector3::unit(ray.direction);
     let t = 0.5 * (unit_direction.y() + 1.0);
     //TODO figure out what this means
@@ -56,7 +71,7 @@ fn main() {
             ray_direction = pixel_center - camera.origin;
             ray = Ray{ origin:camera.origin, direction:ray_direction };
 
-            let pixel_colour = string_colour(ray_colour(ray));
+            let pixel_colour = string_colour(ray_colour(&ray));
             data_file.write((pixel_colour).as_bytes()).expect("write failed");
         }
     }
