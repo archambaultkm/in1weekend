@@ -6,7 +6,8 @@ use std::fs::File;
 use std::io::Write;
 use crate::camera::Camera;
 use crate::ray::Ray;
-use crate::vector3::Vector3;
+use crate::vector3::Point3;
+use crate::vector3::Colour;
 
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 const IMAGE_WIDTH: u32 = 400;
@@ -14,32 +15,42 @@ const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const MAX_COLOUR: u8 = 255;
 
 //TODO move out of here to colours or materials or something
-fn string_colour(pixel_colour:Vector3) -> String {
-    return ((pixel_colour.x * 255.99) as i32).to_string() + " " +
-        &*((pixel_colour.y * 255.99) as i32).to_string() + " " +
-        &*((pixel_colour.z * 255.99) as i32).to_string() + "\n"
+fn string_colour(pixel_colour: Colour) -> String {
+    return ((pixel_colour.r * 255.99) as i32).to_string() + " " +
+        &*((pixel_colour.g * 255.99) as i32).to_string() + " " +
+        &*((pixel_colour.b * 255.99) as i32).to_string() + "\n"
 }
 
-fn hit_sphere(center : &Vector3, radius : f64, ray : &Ray) -> bool {
+fn hit_sphere(center : &Point3, radius : f64, ray : &Ray) -> f64 {
     let oc = ray.origin - *center;
     let a = ray.direction.dot(ray.direction);
     let b = 2.0 * oc.dot(ray.direction);
     let c = oc.dot(oc) - radius  * radius;
 
     let discriminant = b*b - 4.0*a*c;
-    return discriminant > 0.0;
+
+    //if it doesn't hit, discriminant is less than zero
+    return if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-b - discriminant.sqrt()) / (2.0 * a)
+    }
 }
 
-fn ray_colour(ray:&Ray) -> Vector3 {
-    //FOR NOW hard-code a circle with center at camera origin and a colour to return if it hits that circle
-    if hit_sphere(&Vector3{ x: 0.0, y: 0.0, z: -1.0}, 0.5, ray) {
-        return Vector3::new(0.4, 0.54, 0.3);
+fn ray_colour(ray:&Ray) -> Colour {
+    //calculate hit point and colour sphere according to its normal vectors
+    let t = hit_sphere(&Point3 { x: 0.0, y: 0.0, z: -1.0}, 0.5, ray);
+
+    //shade based on normals
+    if t > 0.0 {
+        let n = Point3::unit(ray.at(t) - Point3 { x: 0.0, y: 0.0, z: -1.0});
+        return Colour::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
     }
 
-    let unit_direction : Vector3 = Vector3::unit(ray.direction);
+    let unit_direction : Point3 = Point3::unit(ray.direction);
     let t = 0.5 * (unit_direction.y() + 1.0);
-    //TODO figure out what this means
-    return Vector3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vector3::new(0.5, 0.7, 1.0) * t
+    //this is anything not hitting a shape: a white-to blue gradient background
+    return Colour::new(1.0, 1.0, 1.0) * (1.0 - t) + Colour::new(0.5, 0.7, 1.0) * t
 }
 
 fn main() {
@@ -47,14 +58,14 @@ fn main() {
     let camera : Camera = Camera::new(
         IMAGE_WIDTH as f64,
         IMAGE_HEIGHT as f64,
-        Vector3{ x: 0.0, y: 0.0, z: 0.0 });
+        Point3 { x: 0.0, y: 0.0, z: 0.0 });
 
     //create canvas
     let cols = IMAGE_WIDTH;
     let rows = IMAGE_HEIGHT;
-    let mut pixel_center : Vector3;
+    let mut pixel_center : Point3;
     let mut ray : Ray;
-    let mut ray_direction : Vector3;
+    let mut ray_direction : Point3;
 
     //create a file
     let mut data_file = File::create("scene.ppm").expect("Creation failed.");
