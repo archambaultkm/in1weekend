@@ -1,9 +1,11 @@
 use std::fs::File;
 use std::io::Write;
+use rand::random;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
-use crate::vector3::{Colour, Vector3};
+use crate::util;
+use crate::vector3::{Colour, Point3, Vector3};
 
 pub struct Camera {
     pub origin: Vector3,
@@ -12,6 +14,7 @@ pub struct Camera {
     pub pixel_delta_v: Vector3,
     pub pixel_delta_u: Vector3,
     pub pixel_origin: Vector3,
+    samples_per_pixel : i32
 }
 
 impl Camera {
@@ -45,13 +48,12 @@ impl Camera {
             pixel_delta_v,
             pixel_delta_u,
             pixel_origin,
+            samples_per_pixel : 100
         }
     }
 
     pub fn render(&self, world : &dyn Hittable) {
-        let mut pixel_center : Vector3;
-        let mut ray : Ray;
-        let mut ray_direction : Vector3;
+        let mut ray = Ray::new(Point3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0));
 
         //create a file
         let mut data_file = File::create("scene.ppm").expect("Creation failed.");
@@ -67,11 +69,14 @@ impl Camera {
             println!("On row {} of {}", self.image_height - i as f64, self.image_height);
 
             for j in 0..self.image_width as u32 {
-                pixel_center = self.pixel_origin + (self.pixel_delta_u * i as f64) + (self.pixel_delta_v * j as f64);
-                ray_direction = pixel_center - self.origin;
-                ray = Ray{ origin : self.origin, direction:ray_direction };
+                let mut pixel_colour = Colour::new(0.0, 0.0, 0.0);
 
-                let pixel_colour = (ray_colour(&ray, world)).to_string();
+                for sample in 0..self.samples_per_pixel {
+                    ray = self.get_ray(i, j);
+                    pixel_colour += ray_colour(&ray, world);
+                }
+
+                let pixel_colour = pixel_colour.to_string(self.samples_per_pixel);
 
                 data_file.write((pixel_colour).as_bytes()).expect("write failed");
             }
@@ -79,6 +84,26 @@ impl Camera {
 
         println!("Created a file");
     }
+
+    // Returns a random point in the square surrounding a pixel at the origin
+    fn pixel_sample_square(&self) -> Vector3 {
+        let px = util::random() - 0.5;
+        let py = util::random() - 0.5;
+
+        return (self.pixel_delta_u * px) + (self.pixel_delta_v * py);
+    }
+
+    //Get a randomly sampled camera ray for the pixel at location i,j
+    fn get_ray(&self, i: u32, j : u32) -> Ray {
+        let pixel_center = self.pixel_origin + (self.pixel_delta_u * i as f64) + (self.pixel_delta_v * j as f64);
+        let pixel_sample = pixel_center + self.pixel_sample_square();
+
+        let ray_origin = self.origin;
+        let ray_direction = pixel_sample - ray_origin;
+
+        return Ray::new(self.origin, ray_direction);
+    }
+
 }
 
 fn ray_colour(ray:&Ray, world : &dyn Hittable) -> Colour {

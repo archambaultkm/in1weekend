@@ -1,13 +1,13 @@
-use crate::vector3::Vector3;
+use crate::vector3::{Vector3, Point3};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
-    pub origin: Vector3,
+    pub origin: Point3,
     pub direction: Vector3
 }
 
 impl Ray {
-    pub fn new(origin: Vector3, direction: Vector3) -> Ray {
+    pub fn new(origin: Point3, direction: Vector3) -> Ray {
         Ray { origin, direction }
     }
 

@@ -1,4 +1,5 @@
 use std::ops;
+use crate::interval::Interval;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector3 {
@@ -54,10 +55,16 @@ impl Vector3 {
 }
 
 impl Colour {
-    pub fn to_string(&self) -> String {
-        return ((self.x * 255.99) as i32).to_string() + " " +
-            &*((self.y * 255.99) as i32).to_string() + " " +
-            &*((self.z * 255.99) as i32).to_string() + "\n"
+    pub fn to_string(&self, samples_per_pixel : i32) -> String {
+        let scale = 1.0 / samples_per_pixel as f64;
+        let r = self.x * scale;
+        let g = self.y * scale;
+        let b = self.z * scale;
+
+        let intensity = Interval::new(0.000, 0.999);
+        return ((intensity.clamp(r) * 255.99) as i32).to_string() + " " +
+            &*((intensity.clamp(g) * 255.99) as i32).to_string() + " " +
+            &*((intensity.clamp(b) * 255.99) as i32).to_string() + "\n"
     }
 }
 
@@ -65,6 +72,15 @@ impl ops::Add<Vector3> for Vector3 {
     type Output = Vector3;
     fn add(self, v: Vector3) -> Vector3 {
         Vector3::new(self.x + v.x, self.y + v.y, self.z + v.z)
+    }
+}
+
+impl ops::AddAssign<Vector3> for Vector3 {
+
+    fn add_assign(&mut self, v: Vector3) {
+        self.x += v.x;
+        self.y += v.y;
+        self.z += v.z;
     }
 }
 

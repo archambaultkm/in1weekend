@@ -5,6 +5,7 @@ mod hittable;
 mod sphere;
 mod hittable_list;
 mod interval;
+mod util;
 
 use crate::camera::Camera;
 use crate::hittable::{Hittable};
