@@ -1,5 +1,6 @@
 use std::ops;
 use crate::interval::Interval;
+use crate::util;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector3 {
@@ -16,19 +17,6 @@ impl Vector3 {
     //simple constructor
     pub fn new(x: f64, y: f64, z: f64) -> Vector3 {
         Vector3 { x, y, z }
-    }
-
-    //get x, y, z
-    pub fn x(self) -> f64 {
-        self.x
-    }
-
-    pub fn y(self) -> f64 {
-        self.y
-    }
-
-    pub fn z(self) -> f64 {
-        self.z
     }
 
     pub fn squared_length(self) -> f64 {
@@ -52,19 +40,67 @@ impl Vector3 {
     pub fn unit(self) -> Vector3 {
         self / self.length()
     }
+
+
 }
 
 impl Colour {
     pub fn to_string(&self, samples_per_pixel : i32) -> String {
         let scale = 1.0 / samples_per_pixel as f64;
-        let r = self.x * scale;
-        let g = self.y * scale;
-        let b = self.z * scale;
+        let r = linear_to_gamma(self.x * scale);
+        let g = linear_to_gamma(self.y * scale);
+        let b = linear_to_gamma(self.z * scale);
 
         let intensity = Interval::new(0.000, 0.999);
         return ((intensity.clamp(r) * 255.99) as i32).to_string() + " " +
             &*((intensity.clamp(g) * 255.99) as i32).to_string() + " " +
             &*((intensity.clamp(b) * 255.99) as i32).to_string() + "\n"
+    }
+}
+
+// images rendered are darker than expected because they are expected to be in "gamma space",
+// meaning it assumes the image has been transformed. transform linear to gamma so that the renderer
+// displays the expected image https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials/usinggammacorrectionforaccuratecolorintensity
+pub fn linear_to_gamma(linear_component : f64) -> f64 {
+    return linear_component.sqrt();
+}
+
+pub fn random() -> Vector3 {
+    return Vector3::new(
+        util::random(),
+        util::random(),
+        util::random())
+}
+
+pub fn random_in_interval(range : Interval) -> Vector3 {
+    return Vector3::new(
+        util::random_in_interval(range),
+        util::random_in_interval(range),
+        util::random_in_interval(range)
+    )
+}
+
+pub fn random_in_unit_sphere() -> Vector3 {
+    loop {
+        let p = random_in_interval(Interval::new(-1.0, 1.0));
+
+        if p.squared_length() < 1.0 {
+            return p;
+        }
+    }
+}
+
+pub fn random_unit_vector() -> Vector3 {
+    return Vector3::unit(random_in_unit_sphere());
+}
+
+pub fn random_on_hemisphere(normal : Vector3) -> Vector3 {
+    let on_unit_sphere = random_unit_vector();
+
+    return if on_unit_sphere.dot(normal) > 0.0 {
+        on_unit_sphere
+    } else {
+        -on_unit_sphere
     }
 }
 

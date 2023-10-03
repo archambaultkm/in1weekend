@@ -1,11 +1,13 @@
 use std::fs::File;
 use std::io::Write;
-use rand::random;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::util;
-use crate::vector3::{Colour, Point3, Vector3};
+use crate::vector3::{Colour, Point3, random_on_hemisphere, random_unit_vector, Vector3};
+
+const SAMPLES_PER_PIXEL : i32 = 100;
+const MAX_DEPTH : i32 = 50;
 
 pub struct Camera {
     pub origin: Vector3,
@@ -13,8 +15,7 @@ pub struct Camera {
     image_width: f64,
     pub pixel_delta_v: Vector3,
     pub pixel_delta_u: Vector3,
-    pub pixel_origin: Vector3,
-    samples_per_pixel : i32
+    pub pixel_origin: Vector3
 }
 
 impl Camera {
@@ -47,8 +48,7 @@ impl Camera {
             image_width,
             pixel_delta_v,
             pixel_delta_u,
-            pixel_origin,
-            samples_per_pixel : 100
+            pixel_origin
         }
     }
 
@@ -71,12 +71,12 @@ impl Camera {
             for j in 0..self.image_width as u32 {
                 let mut pixel_colour = Colour::new(0.0, 0.0, 0.0);
 
-                for sample in 0..self.samples_per_pixel {
+                for sample in 0..SAMPLES_PER_PIXEL {
                     ray = self.get_ray(i, j);
-                    pixel_colour += ray_colour(&ray, world);
+                    pixel_colour += ray_colour(&ray, MAX_DEPTH, world);
                 }
 
-                let pixel_colour = pixel_colour.to_string(self.samples_per_pixel);
+                let pixel_colour = pixel_colour.to_string(SAMPLES_PER_PIXEL);
 
                 data_file.write((pixel_colour).as_bytes()).expect("write failed");
             }
@@ -106,16 +106,29 @@ impl Camera {
 
 }
 
-fn ray_colour(ray:&Ray, world : &dyn Hittable) -> Colour {
-    //calculate hit point and colour sphere according to its normal vectors
-    let mut record = HitRecord::new();
+fn ray_colour(ray:&Ray, depth : i32,  world : &dyn Hittable) -> Colour {
 
-    if world.hit(ray, Interval::new(0.0, f64::INFINITY), &mut record) {
-        return (record.normal + Colour::new(1.0, 1.0, 1.0)) * 0.5;
+    //ensure function doesn't recurse forever (stop gathering light if at max depth)
+    if (depth ==0) {
+        return Colour::new(0.0, 0.0, 0.0);
+    }
+
+    //calculate hit point and colour sphere according to its normal vectors
+    //ignore hits very close to the calculated intersection point (range starts at 0.001) for the shadow acne
+    let mut record = HitRecord::new();
+    if world.hit(ray, Interval::new(0.001, f64::INFINITY), &mut record) {
+        //let direction = random_on_hemisphere(record.normal);
+        let direction = record.normal + random_unit_vector(); //lambertian reflection
+        return ray_colour(&Ray::new(
+            record.point,
+            direction
+        ), depth - 1, world)
+            * 0.5; // reflectance- 0.5 is accurate
     }
 
     let unit_direction : Vector3 = Vector3::unit(ray.direction);
     let a = 0.5 * (unit_direction.y + 1.0);
+
     //this is anything not hitting a shape: a white-to blue gradient background
     return Colour::new(1.0, 1.0, 1.0) * (1.0 - a) + Colour::new(0.5, 0.7, 1.0) * a;
 }
