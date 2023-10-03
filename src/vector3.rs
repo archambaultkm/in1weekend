@@ -45,6 +45,20 @@ impl Vector3 {
         let s = 1e-8;
         (f64::abs(self.x) < s) && (f64::abs(self.y) < s) && (f64::abs(self.z) < s)
     }
+
+    pub fn reflect(&self, n : &Vector3) -> Vector3 {
+        return *self - *n * Vector3::dot(*self, *n)*2.0;
+    }
+
+    // TODO write out explanation for this
+    pub fn refract(&self, n : &Vector3, etai_over_etat : f64) -> Vector3 {
+        let cos_theta = f64::min(-self.dot(*n), 1.0);
+
+        let r_out_perpendicular = (*n * cos_theta + *self) * etai_over_etat;
+        let r_out_parallel = *n * -f64::abs(1.0 - r_out_perpendicular.squared_length()).sqrt();
+
+        return r_out_perpendicular + r_out_parallel;
+    }
 }
 
 impl Colour {
@@ -105,10 +119,6 @@ pub fn random_on_hemisphere(normal : Vector3) -> Vector3 {
     } else {
         -on_unit_sphere
     }
-}
-
-pub fn reflect(v : Vector3, n : Vector3) -> Vector3 {
-    return v - n*Vector3::dot(v,n)*2.0;
 }
 
 impl ops::Add<Vector3> for Vector3 {

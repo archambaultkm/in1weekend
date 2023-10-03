@@ -6,7 +6,7 @@ use crate::interval::Interval;
 use crate::material::Matte;
 use crate::ray::Ray;
 use crate::util;
-use crate::vector3::{Colour, Point3, random_on_hemisphere, random_unit_vector, Vector3};
+use crate::vector3::{Colour, Point3, Vector3};
 
 const SAMPLES_PER_PIXEL : i32 = 100;
 const MAX_DEPTH : i32 = 50;

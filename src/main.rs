@@ -12,7 +12,7 @@ use std::sync::Arc;
 use crate::camera::Camera;
 use crate::hittable::{Hittable};
 use crate::hittable_list::HittableList;
-use crate::material::{Matte, Metal};
+use crate::material::{Dielectric, Matte, Metal};
 use crate::sphere::Sphere;
 use crate::vector3::{Colour, Point3, Vector3};
 
@@ -27,9 +27,9 @@ fn main() {
     let mut world = HittableList::new();
 
     let material_ground = Arc::new(Matte::new(Colour::new(
-        0.0,
+        0.2,
         0.7,
-        0.2
+        0.4
     )));
 
     world.add(Box::new(Sphere::new(
@@ -38,17 +38,13 @@ fn main() {
         material_ground
     )));
 
+    //negative radius on a dielectric sphere makes a hollow sphere
     world.add(Box::new(Sphere::new(
         Point3::new(-1.0, 0.0, -1.0),
-        0.5,
-        Arc::new(Metal::new(
-            Colour::new(
-                0.9,
-                0.5,
-                0.9
-            ),
-            0.3
-        ))
+        -0.5,
+        Arc::new(Dielectric::new(
+        1.5)
+        )
     )));
 
     world.add(Box::new(Sphere::new(
@@ -56,21 +52,22 @@ fn main() {
         0.5,
         Arc::new(Metal::new(
             Colour::new(
-            0.1,
-            0.1,
-            0.3
+            0.9,
+            0.4,
+            0.4
         ),
-        0.1
+        0.2
         ))
     )));
 
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, 0.0, -1.0),
         0.5,
-        Arc::new(Matte::new(Colour::new(
-            0.0,
-            0.7,
-            0.2
+        Arc::new(Matte::new(
+            Colour::new(
+                0.1,
+                0.2,
+                0.5
         )))
     )));
 
