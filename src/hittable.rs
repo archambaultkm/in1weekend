@@ -1,22 +1,26 @@
+use std::sync::Arc;
 use crate::interval::Interval;
 use crate::ray::Ray;
+use crate::material::*;
 use crate::vector3::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub point : Point3,
     pub normal : Vector3,
+    pub material : Arc<dyn Material>,
     pub t : f64,
     pub front_face : bool
 }
 
 impl HitRecord {
-    pub fn new() -> HitRecord {
+    pub fn new(point: Point3, normal: Vector3, t: f64, material: Arc<dyn Material>) -> Self {
         HitRecord {
-            point: Point3::new(0.0, 0.0, 0.0),
-            normal: Vector3::new(0.0, 0.0, 0.0),
-            t: 0.0,
-            front_face: false
+            point,
+            normal,
+            t,
+            front_face: false,
+            material
         }
     }
 
@@ -34,5 +38,5 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray : &Ray, ray_t : Interval, record : &mut HitRecord) -> bool;
+    fn hit(&self, ray : &Ray, ray_t : Interval) -> Option<HitRecord>;
 }

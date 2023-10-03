@@ -1,6 +1,9 @@
+use std::sync::Arc;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
+use crate::material::Matte;
 use crate::ray::Ray;
+use crate::vector3::{Colour, Vector3};
 
 pub struct HittableList {
     objects: Vec<Box<dyn Hittable>>
@@ -19,24 +22,17 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: &Ray, ray_t : Interval, record: &mut HitRecord) -> bool {
-        let mut temp_record = HitRecord::new();
-        let mut hit_anything : bool = false;
+    fn hit(&self, ray: &Ray, ray_t : Interval) -> Option<HitRecord> {
+        let mut record: Option<HitRecord> = None;
         let mut closest_so_far = ray_t.max;
 
-
         for object in &self.objects {
-            if object.hit(ray, ray_t, &mut temp_record) {
-                hit_anything = true;
-                closest_so_far = temp_record.t;
-                //TODO see if you can do like a copy constructor?
-                record.t = temp_record.t;
-                record.point = temp_record.point;
-                record.front_face = temp_record.front_face;
-                record.normal = temp_record.normal;
+            if let Some(object_record) = object.hit(ray, ray_t) {
+                closest_so_far = object_record.t;
+                record = Some(object_record);
             }
         }
 
-        return hit_anything;
+        return record;
     }
 }

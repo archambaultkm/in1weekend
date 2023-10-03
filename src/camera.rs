@@ -1,7 +1,9 @@
 use std::fs::File;
 use std::io::Write;
+use std::sync::Arc;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
+use crate::material::Matte;
 use crate::ray::Ray;
 use crate::util;
 use crate::vector3::{Colour, Point3, random_on_hemisphere, random_unit_vector, Vector3};
@@ -109,21 +111,29 @@ impl Camera {
 fn ray_colour(ray:&Ray, depth : i32,  world : &dyn Hittable) -> Colour {
 
     //ensure function doesn't recurse forever (stop gathering light if at max depth)
-    if (depth ==0) {
+    if depth == 0 {
         return Colour::new(0.0, 0.0, 0.0);
     }
 
     //calculate hit point and colour sphere according to its normal vectors
     //ignore hits very close to the calculated intersection point (range starts at 0.001) for the shadow acne
-    let mut record = HitRecord::new();
-    if world.hit(ray, Interval::new(0.001, f64::INFINITY), &mut record) {
+    let mut record = HitRecord::new(
+        Vector3::new(0.0, 0.0, 0.0),
+        Vector3::new(0.0, 0.0, 0.0),
+        0.0,
+        //TODO
+        Arc::new((Matte::new(Colour::new(0.0, 0.0, 0.0))))
+    );
+
+    if let Some(record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
         //let direction = random_on_hemisphere(record.normal);
-        let direction = record.normal + random_unit_vector(); //lambertian reflection
-        return ray_colour(&Ray::new(
-            record.point,
-            direction
-        ), depth - 1, world)
-            * 0.5; // reflectance- 0.5 is accurate
+        //let direction = record.normal + random_unit_vector(); //lambertian reflection
+
+        return if let Some((attenuation, scattered)) = record.material.scatter(ray, &record) {
+            attenuation * ray_colour(&scattered, depth - 1, world)
+        } else {
+            Colour::new(0.0, 0.0, 0.0)
+        };
     }
 
     let unit_direction : Vector3 = Vector3::unit(ray.direction);

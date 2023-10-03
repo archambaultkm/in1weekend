@@ -41,7 +41,10 @@ impl Vector3 {
         self / self.length()
     }
 
-
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        (f64::abs(self.x) < s) && (f64::abs(self.y) < s) && (f64::abs(self.z) < s)
+    }
 }
 
 impl Colour {
@@ -102,6 +105,10 @@ pub fn random_on_hemisphere(normal : Vector3) -> Vector3 {
     } else {
         -on_unit_sphere
     }
+}
+
+pub fn reflect(v : Vector3, n : Vector3) -> Vector3 {
+    return v - n*Vector3::dot(v,n)*2.0;
 }
 
 impl ops::Add<Vector3> for Vector3 {
