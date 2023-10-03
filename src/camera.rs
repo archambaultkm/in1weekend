@@ -1,15 +1,19 @@
 use std::fs::File;
 use std::io::Write;
-use std::sync::Arc;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
-use crate::material::Matte;
 use crate::ray::Ray;
 use crate::util;
 use crate::vector3::{Colour, Point3, Vector3};
 
+const ASPECT_RATIO: f64 = 16.0 / 9.0;
+const IMAGE_WIDTH: u32 = 400;
+const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
+pub const MAX_COLOUR: f64 = 255.99;
 const SAMPLES_PER_PIXEL : i32 = 100;
 const MAX_DEPTH : i32 = 50;
+const VFOV : f64 = 50.0; //vertical view angle (field of view)
+const VUP : Vector3 = Vector3{x: 0.0, y: 1.0, z: 0.0}; // Camera-relative "up" direction
 
 pub struct Camera {
     pub origin: Vector3,
@@ -22,32 +26,46 @@ pub struct Camera {
 
 impl Camera {
     pub fn new(
-        image_width:f64,
-        image_height:f64,
-        origin: Vector3,
+        look_from : Point3,
+        look_at : Point3
 
     ) -> Camera {
-        let focal_length = 1.0f64;
-        let viewport_height = 2.0f64;
-        let viewport_width = viewport_height * (image_width/image_height);
+        // Initialize
+        let origin = look_from;
 
-        let viewport_horizontal = Vector3 { x:viewport_width, y:0.0, z:0.0 };
-        let viewport_vertical = Vector3 {x:0.00, y:viewport_height, z:0.0 };
-        let pixel_delta_v = viewport_horizontal/image_width;
-        let pixel_delta_u = viewport_vertical/image_height;
+        //Determine viewport dimensions
+        let focal_length = (look_from - look_at).length();
+        let theta = VFOV.to_radians();
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h;
+        let viewport_width = viewport_height * ASPECT_RATIO;
 
+        //Calculate u,v,w unit basis vectors for the camera coordinate frame
+        let w = (look_from - look_at).unit();
+        let u = VUP.cross(w).unit();
+        let v = w.cross(u);
+
+        //calculate the vectors across the horizontal and down the vertical viewport edges
+        let viewport_horizontal = u * viewport_width * focal_length;
+        let viewport_vertical = v * viewport_height * focal_length;
+
+        //calculate the horizontal and vertical delta vectors from pixel to pixel
+        let pixel_delta_v = viewport_horizontal/IMAGE_WIDTH as f64;
+        let pixel_delta_u = viewport_vertical/IMAGE_HEIGHT as f64;
+
+        //calculate the position of the upper left pixel
         let viewport_upper_left = origin
             - viewport_horizontal/2.0
             - viewport_vertical/2.0
-            - Vector3::new(0.0, 0.0, focal_length);
+            - (w * focal_length);
         let pixel_origin = viewport_upper_left
             + viewport_horizontal * pixel_delta_u
             + viewport_vertical * pixel_delta_v;
 
         Camera {
             origin,
-            image_height,
-            image_width,
+            image_height : IMAGE_HEIGHT as f64,
+            image_width : IMAGE_WIDTH as f64,
             pixel_delta_v,
             pixel_delta_u,
             pixel_origin
@@ -111,23 +129,13 @@ impl Camera {
 fn ray_colour(ray:&Ray, depth : i32,  world : &dyn Hittable) -> Colour {
 
     //ensure function doesn't recurse forever (stop gathering light if at max depth)
-    if depth == 0 {
+    if depth <= 0 {
         return Colour::new(0.0, 0.0, 0.0);
     }
 
     //calculate hit point and colour sphere according to its normal vectors
     //ignore hits very close to the calculated intersection point (range starts at 0.001) for the shadow acne
-    let mut record = HitRecord::new(
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(0.0, 0.0, 0.0),
-        0.0,
-        //TODO
-        Arc::new((Matte::new(Colour::new(0.0, 0.0, 0.0))))
-    );
-
     if let Some(record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
-        //let direction = random_on_hemisphere(record.normal);
-        //let direction = record.normal + random_unit_vector(); //lambertian reflection
 
         return if let Some((attenuation, scattered)) = record.material.scatter(ray, &record) {
             attenuation * ray_colour(&scattered, depth - 1, world)

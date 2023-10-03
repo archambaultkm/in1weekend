@@ -47,10 +47,10 @@ impl Dielectric {
 
     pub fn reflectance(cosine : f64, refraction_idx : f64) -> f64 {
         //Schlick's approximation for reflectance
-        let mut r0 = (1.0-refraction_idx) / (1.0+refraction_idx);
+        let mut r0 = (1.0 - refraction_idx) / (1.0 + refraction_idx);
         r0 = r0 * r0;
 
-        return r0 + (1.0 - r0) * f64::powf(1.0 - cosine, 5.0);
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
 }
 
@@ -74,7 +74,7 @@ impl Material for Metal {
         let reflected = ray.direction.unit().reflect(&record.normal);
         let scattered = Ray::new(record.point, reflected + random_in_unit_sphere() * self.fuzz);
 
-        if scattered.direction().dot(record.normal) > 0.0 {
+        if scattered.direction.dot(record.normal) > 0.0 {
             Some((self.albedo, scattered))
         } else {
             None
@@ -91,7 +91,7 @@ impl Material for Dielectric {
             self.ir
         };
 
-        let unit_direction = ray.direction().unit();
+        let unit_direction = ray.direction.unit();
         let cos_theta = f64::min((-unit_direction).dot(record.normal), 1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 

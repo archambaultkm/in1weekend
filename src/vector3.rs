@@ -1,4 +1,5 @@
 use std::ops;
+use crate::camera::MAX_COLOUR;
 use crate::interval::Interval;
 use crate::util;
 
@@ -31,10 +32,10 @@ impl Vector3 {
         (self.x * v.x) + (self.y * v.y) + (self.z * v.z)
     }
 
-    pub fn cross(self, rhs: Vector3) -> Vector3 {
-        Vector3::new(self.y * rhs.z - self.z * rhs.y,
-                     self.z * rhs.x - self.x * rhs.z,
-                     self.x * rhs.y - self.y * rhs.x)
+    pub fn cross(self, v: Vector3) -> Vector3 {
+        Vector3::new(self.y * v.z - self.z * v.y,
+                     self.z * v.x - self.x * v.z,
+                     self.x * v.y - self.y * v.x)
     }
 
     pub fn unit(self) -> Vector3 {
@@ -69,9 +70,9 @@ impl Colour {
         let b = linear_to_gamma(self.z * scale);
 
         let intensity = Interval::new(0.000, 0.999);
-        return ((intensity.clamp(r) * 255.99) as i32).to_string() + " " +
-            &*((intensity.clamp(g) * 255.99) as i32).to_string() + " " +
-            &*((intensity.clamp(b) * 255.99) as i32).to_string() + "\n"
+        return ((intensity.clamp(r) * MAX_COLOUR) as i32).to_string() + " " +
+            &*((intensity.clamp(g) * MAX_COLOUR) as i32).to_string() + " " +
+            &*((intensity.clamp(b) * MAX_COLOUR) as i32).to_string() + "\n"
     }
 }
 
