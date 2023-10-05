@@ -122,6 +122,21 @@ pub fn random_on_hemisphere(normal : Vector3) -> Vector3 {
     }
 }
 
+pub fn random_in_unit_disk() -> Vector3 {
+    loop {
+        let p = Vector3::new(
+            util::random_in_interval(Interval::new(-1.0, 1.0)),
+            util::random_in_interval(Interval::new(-1.0, 1.0)),
+            0.0
+        );
+
+        if p.squared_length() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
+}
+
 impl ops::Add<Vector3> for Vector3 {
     type Output = Vector3;
     fn add(self, v: Vector3) -> Vector3 {
