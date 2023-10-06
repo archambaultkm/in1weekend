@@ -7,16 +7,16 @@ use crate::util;
 use crate::vector3::{Colour, Point3, random_in_unit_disk, Vector3};
 
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
-const IMAGE_WIDTH: u32 = 400;
+const IMAGE_WIDTH: u32 = 1200;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const APERTURE : f64 = 0.1;
 pub const MAX_COLOUR: f64 = 255.99;
-const SAMPLES_PER_PIXEL : i32 = 100;
-const MAX_DEPTH : i32 = 50;
+const SAMPLES_PER_PIXEL : i32 = 10; // TODO set to at least 100
+const MAX_DEPTH : i32 = 5; // TODO set to 50
 const VFOV : f64 = 20.0; //vertical view angle (field of view)
 const VUP : Vector3 = Vector3{x: 0.0, y: 1.0, z: 0.0}; // Camera-relative "up" direction
-const DEFOCUS_ANGLE : f64 = 10.0;
-const FOCUS_DIST : f64 = 3.4;
+const DEFOCUS_ANGLE : f64 = 0.6;
+const FOCUS_DIST : f64 = 10.0;
 
 pub struct Camera {
     pub origin: Vector3,
